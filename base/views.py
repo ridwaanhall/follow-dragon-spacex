@@ -1,10 +1,11 @@
+from django.conf import settings
 from django.shortcuts import redirect, render
 import requests
 import datetime
 from django.http import JsonResponse, HttpResponse
 
 def dragon_public(request):
-    url = "https://sxcontent9668.azureedge.us/cms-assets/dragon_public.json"
+    url = settings.DRAGON_PUBLIC_URL
     
     # Custom headers (if needed)
     headers = {
