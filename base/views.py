@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 import requests
 import datetime
 from django.http import JsonResponse, HttpResponse
@@ -41,6 +41,12 @@ def dragon_public(request):
     except requests.exceptions.RequestException as e:
         # Handle any request errors
         return HttpResponse(f"Error fetching data: {e}", status=500)
+    
+def redirect_to_texture(request):
+    return redirect('follow_dragon_earthtexture')
 
-def follow_dragon_view(request):
-    return render(request, 'follow-dragon.html')
+def follow_dragon_earthtexture_view(request):
+    return render(request, 'follow-dragon-earthtexture.html')
+
+def follow_dragon_earthmap_view(request):
+    return render(request, 'follow-dragon-earthmap.html')
