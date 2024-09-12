@@ -1,0 +1,89 @@
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #000000;
+	font: 14px/20px Verdana, Arial, geneva, sans-serif;
+	font-weight: 400;
+	text-align: left;
+	color: #FFFFFF;
+	overflow: hidden;
+}
+
+    .noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari */
+        -khtml-user-select: none; /* Konqueror HTML */
+        -moz-user-select: none; /* Old versions of Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+                user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Opera and Firefox */
+    }
+
+	#interactive {
+		display: block;
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
+        background-color: #000000;
+		overflow: hidden;
+	}
+
+    @media screen and (min-width: 960px) {
+    }
+
+    @media screen and (max-width: 960px) {
+        #interactive {
+            margin-top: -30px;
+        }
+    }
+
+    .dragontracker-header
+    {
+        margin-bottom: 30px;
+    }
+
+    #preloader {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        }
+        #preloader-inner {
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            margin: 0;
+            text-align: center;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            }
+            #preloader-circle {
+                display: block;
+                position: relative;
+                width: 50px;
+                height: 50px;
+                margin: 0 auto 0 auto;
+                }
+                .circle-grey {
+                    stroke: #232323;
+                }
+                .circle-color {
+                    stroke: #FFF;
+                }
+                #preloader-percent {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font: 10px/14px 'DIN_Bold', Verdana, Arial, geneva, sans-serif;
+                    color: #FFFFFF;
+                    text-align: center;
+                }

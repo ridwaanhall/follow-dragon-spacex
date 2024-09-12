@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>SPACEX - Where is Dragon?</title>
+
+        <link rel="stylesheet" type="text/css" href="/follow-dragon/css/normalize.min.css" media="screen" />
+        <link rel="stylesheet" type="text/css" href="/follow-dragon/css/layout.css" media="screen" />
+        <link rel="stylesheet" type="text/css" href="/style.min.css" media="screen" />
+        <link rel="stylesheet" type="text/css" href="/follow-dragon/css/ab.css" media="screen" />
+
+        <script type="text/javascript" src="/follow-dragon/js/three/three.min.js"></script>
+        <script type="text/javascript" src="/follow-dragon/js/three/WebGL.js"></script>
+        <script type="text/javascript" src="/follow-dragon/js/gsap/gsap.min.js"></script>
+        <script type="text/javascript" src="/follow-dragon/js/gsap/DrawSVGPlugin.min.js"></script>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+        <script type="x-shader/x-vertex" id="line_vertexshader">
+            attribute float alpha;
+            varying float vAlpha;
+
+            void main() {
+              vAlpha = alpha;
+              vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+              gl_Position = projectionMatrix * mvPosition;
+            }
+        </script>
+        <script type="x-shader/x-fragment" id="line_fragmentshader">
+            uniform vec3 color;
+            varying float vAlpha;
+
+            uniform vec3 fogColor;
+            uniform float fogNear;
+            uniform float fogFar;
+
+            void main() {
+              gl_FragColor = vec4(color, 1.0);
+              gl_FragColor = vec4(color, vAlpha);
+
+              #ifdef USE_FOG
+                #ifdef USE_LOGDEPTHBUF_EXT
+                  float depth = gl_FragDepthEXT / gl_FragCoord.w;
+                #else
+                  float depth = gl_FragCoord.z / gl_FragCoord.w;
+                #endif
+                float fogFactor = smoothstep(fogNear, fogFar, depth);
+                gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+              #endif
+            }
+        </script>
+    </head>
+    <body>
+        <div class="box content-top-left dragon-tracker-key">
+            <h2 class="dragontracker-header" style="font-size: 35px;">FOLLOW DRAGON</h2>
+            <div class="key-entry">
+                <div class="key-image"><img src="/static/images/inspiration4/Dragon.svg" width="40" height="40" /></div>
+                <div class="key-values">
+                    <span>DRAGON</span>
+                </div>
+            </div>
+        </div>
+        <div id="interactive" class="noselect"></div>
+        <div id="preloader" class="noselect">
+            <div id="preloader-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" id="preloader-circle" aria-hidden="true">
+                    <circle cx="25" cy="25" r="23" stroke-width="2" fill="none" class="circle-grey" />
+                    <circle cx="25" cy="25" r="23" stroke-width="3" fill="none" class="circle-color" />
+                </svg>
+                <div id="preloader-percent"></div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            const contentBaseUrl = "https://content.spacex.com";
+            const assetsBaseUrl = "https://sxcontent9668.azureedge.us/cms-assets";
+        </script>
+
+        <script type="text/javascript" src="/follow-dragon/js/threed.js"></script>
+    </body>
+</html>

@@ -1,0 +1,145 @@
+.content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  
+    width: 100%;
+    height: 100%;
+  
+    background: transparent;
+  }
+  
+  .box {
+    max-width: 500px;
+    z-index: 1;
+  }
+  
+  .content-top-left {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+  }
+  
+  .content-bottom-left {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+  }
+  
+  .heading-1 {
+    font-size: 50px;
+    line-height: 60px;
+  }
+  .heading-2 {
+    font-size: 20px;
+    line-height: 26px;
+  }
+  .paragraph {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  
+  .row {
+    display: flex;
+  }
+  
+  .row .labels {
+    margin-left: 25px;
+  }
+  .row .labels span {
+    display: block;
+  }
+  
+  .dragon-tracker-key {
+      width: auto;
+      bottom: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+  
+  .key-entry {
+      display: flex;
+    font-size: 14px;
+      margin-top: 20px;
+    pointer-events: none;
+    user-select: none;
+  }
+  
+  .key-entry .key-image {
+      width: 50px;
+      text-align: center;
+      margin-right: 20px;
+  }
+  
+  .key-entry .key-values {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+  }
+  
+  .key-entry .key-distance {
+      font-weight: bold;
+      line-height: 16px;
+  }
+  
+  @media (max-width: 375px) {
+    .box, #interactive {
+      position: relative;
+    }
+  
+    #interactive {
+      margin-top: 50px;
+      left: auto;
+      top: auto;
+    }
+  
+    .content-top-left,
+    .content-bottom-left {
+      left: 20px;
+    }
+  
+    .content-top-left {
+      top: auto;
+      margin-top: 75px;
+    }
+  
+    .box {
+      max-width: 83%;
+    }
+  
+    .heading-1 {
+      font-size: 40px;
+      line-height: 47px;
+    }
+  }
+  
+  @media (min-width: 376px) and (max-width: 1000px) {
+    .box, #interactive {
+      position: relative;
+    }
+  
+    #interactive {
+      margin-top: 40px;
+    }
+  
+    .content-top-left,
+    .content-bottom-left {
+      left: 20px;
+    }
+  
+    .content-top-left {
+      top: 20px;
+    }
+  
+    .box {
+      max-width: 83%;
+    }
+  
+    .heading-1 {
+      font-size: 40px;
+      line-height: 47px;
+    }
+  }
+  
