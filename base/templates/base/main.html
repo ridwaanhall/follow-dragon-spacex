@@ -4,16 +4,38 @@
 <html>
     <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
         <title>{% block title %}Follow Dragon{% endblock %} | Follow Dragon</title>
-
+    
+        <!-- SEO Meta Tags -->
+        <meta name="description" content="Track the Dragon spacecraft from SpaceX in real-time. Get the latest updates, launch schedules, and orbital data." />
+        <meta name="keywords" content="SpaceX, Dragon, spacecraft, tracking, real-time, space, launch, orbital data, Dragon missions" />
+        <meta name="author" content="Follow Dragon Team" />
+        <meta name="robots" content="index, follow" />
+    
+        <!-- Open Graph Meta Tags for social sharing -->
+        <meta property="og:title" content="Follow Dragon | Real-time SpaceX Dragon Tracking" />
+        <meta property="og:description" content="Follow the journey of SpaceX's Dragon spacecraft with real-time updates and orbital tracking." />
+        <meta property="og:image" content="{% static 'images/dragon_tracking_preview.jpg' %}" />
+        <meta property="og:url" content="https://yourwebsite.com/" />
+        <meta property="og:type" content="website" />
+    
+        <!-- Twitter Card Meta Tags -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Follow Dragon | Real-time SpaceX Dragon Tracking" />
+        <meta name="twitter:description" content="Follow the Dragon spacecraft in real-time, get updates on launches, and track orbital data." />
+        <meta name="twitter:image" content="{% static 'images/dragon_tracking_twitter.jpg' %}" />
+    
+        <!-- Link to Stylesheets -->
         <link rel="stylesheet" type="text/css" href="{% static 'follow-dragon/css/normalize.min.css' %}" media="screen" />
         <link rel="stylesheet" type="text/css" href="{% static 'follow-dragon/css/layout.css' %}" media="screen" />
         <link rel="stylesheet" type="text/css" href="{% static 'style.min.css' %}" media="screen" />
         <link rel="stylesheet" type="text/css" href="{% static 'follow-dragon/css/ab.css' %}" media="screen" />
-
+    
+        <!-- Favicon -->
         <link rel="shortcut icon" href="{% static 'favicon/favicon.ico' %}" type="image/x-icon">
-
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
         <!-- Additional Scripts or Meta tags for individual pages -->
         {% block head_scripts %}
