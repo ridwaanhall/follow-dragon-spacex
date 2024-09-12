@@ -1,0 +1,783 @@
+<!-- follow-dragon.html -->
+{% extends "base/main.html" %}
+
+{% load static %}
+
+{% block title %}
+    Earth Map
+{% endblock %}
+
+{% block head_scripts %}
+    <script type="x-shader/x-vertex" id="line_vertexshader">
+        attribute float alpha;
+        varying float vAlpha;
+
+        void main() {
+            vAlpha = alpha;
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    </script>
+    <script type="x-shader/x-fragment" id="line_fragmentshader">
+        uniform vec3 color;
+        varying float vAlpha;
+
+        uniform vec3 fogColor;
+        uniform float fogNear;
+        uniform float fogFar;
+
+        void main() {
+            gl_FragColor = vec4(color, 1.0);
+            gl_FragColor = vec4(color, vAlpha);
+
+            #ifdef USE_FOG
+                #ifdef USE_LOGDEPTHBUF_EXT
+                    float depth = gl_FragDepthEXT / gl_FragCoord.w;
+                #else
+                    float depth = gl_FragCoord.z / gl_FragCoord.w;
+                #endif
+                float fogFactor = smoothstep(fogNear, fogFar, depth);
+                gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
+            #endif
+        }
+    </script>
+{% endblock %}
+
+{% block content %}
+    <!-- <div class="box content-top-left dragon-tracker-key">
+        <h2 class="dragontracker-header" style="font-size: 35px;">FOLLOW DRAGON</h2>
+        <div class="key-entry">
+            <div class="key-image">
+                <img src="{% static 'images/inspiration4/Dragon.svg' %}" width="40" height="40" />
+            </div>
+            <div class="key-values">
+                <span><a href="{% url 'follow_dragon_earthtexture' %}">Earth Texture</a></span>
+            </div>
+        </div>
+    </div> -->
+    <div id="interactive" class="noselect"></div>
+    <div id="preloader" class="noselect">
+        <div id="preloader-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" id="preloader-circle" aria-hidden="true">
+                <circle cx="25" cy="25" r="23" stroke-width="2" fill="none" class="circle-grey" />
+                <circle cx="25" cy="25" r="23" stroke-width="3" fill="none" class="circle-color" />
+            </svg>
+            <div id="preloader-percent"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_scripts %}
+    <script type="text/javascript">
+        const contentBaseUrl = "http://127.0.0.1:8000";
+        const assetsBaseUrl = "http://127.0.0.1:8000";
+    </script>
+
+    <script type="text/javascript">
+        gsap.defaults({ overwrite: 'auto' });
+        gsap.config({ nullTargetWarn: false });
+        
+        var deviceSettings = {
+            isWebGL: false,
+            isAndroid: null,
+            isIEMobile: null,
+            isiPod: null,
+            isiPhone: null,
+            isiPad: null,
+            isiOS: null,
+            isMobile: null,
+            isTablet: null,
+            isWinSafari: null,
+            isMacSafari: null
+            };
+        
+        function setupDeviceSettings() {
+            var ua = navigator.userAgent.toLowerCase();
+            deviceSettings.isAndroid = ua.indexOf("android") > -1;
+            deviceSettings.isiPod = navigator.userAgent.match(/iPod/i) !== null;
+            deviceSettings.isiPhone = navigator.userAgent.match(/iPhone/i) !== null;
+            deviceSettings.isiPad = navigator.userAgent.match(/iPad/i) !== null;
+            deviceSettings.isiOS = (navigator.userAgent.match(/(iPad|iPhone|iPod)/i) ? true : false);
+            deviceSettings.isIEMobile = navigator.userAgent.match(/iemobile/i) !== null;
+        
+            var p = navigator.platform.toLowerCase();
+            if (deviceSettings.isIEMobile || deviceSettings.isAndroid || deviceSettings.isiPhone || deviceSettings.isiPad || p === 'ipad' || p === 'iphone' || p === 'ipod' || p === 'android' || p === 'palm' || p === 'windows phone' || p === 'blackberry' || p === 'linux armv7l') {
+                deviceSettings.isMobile = true;
+                document.body.className += 'isMobile';
+            } else {
+                document.body.className += 'isDesktop';
+            }
+        }
+        
+        var i,
+            x, y,
+            camera,
+            scene,
+            renderer,
+            container,
+            $ = document.querySelector.bind(document),
+            $$ = document.querySelectorAll.bind(document),
+            width  = window.innerWidth,
+            height = window.innerHeight,
+            windowHalfX = width / 2,
+            windowHalfY = height / 2,
+            isWebglAliasing = true,
+            toRAD = Math.PI/180,
+            radianLoop = 6.28319,
+            mouse = new THREE.Vector2(), mouseX = 0, mouseY = 0,
+            mouseXOnMouseDown = 0, mouseYOnMouseDown = 0,
+            clientMouseX = 0, clientMouseY = 0, initMouseX,
+            openingCameraZ = 30000,
+            baseCameraZ = 30000,
+            targetCameraZ = baseCameraZ,
+            targetRotationX = 0,
+            targetRotationY = 0, //-90 * toRAD,
+            targetRotationZ = 0,
+            targetRotationXOnMouseDown = 0,
+            targetRotationYOnMouseDown = 0,
+            lastTouchX, lastTouchY,
+            cameraTarget = "manual",
+            cameraDirection = "left",
+            rotationSpeed = { value: 0.001 },
+            dragSpeed = 0.1,
+            dragZone = 25,
+            dragSpeedSlowZone = 35;
+            zoomMax = 29000,
+            zoomMin = 31000,
+            iconSize = 28,
+            distanceToMeters = 1000,
+            isMouseDown = false, isMouseMoved = false,
+            isRotated = false, isEventsEnabled = false;
+        
+        function initWebgl() {
+            setupDeviceSettings();
+        
+            container = $('#interactive');
+            scene = new THREE.Scene();
+            //scene.fog = new THREE.Fog( 0x000000, 0, 15000 );
+            camera = new THREE.PerspectiveCamera( 35, width / height, 0.5, baseCameraZ * 2 );
+            camera.position.x = 0;
+            camera.position.y = 0;
+            camera.position.z = openingCameraZ;
+            camera.rotation.x = 0;
+            camera.rotation.y = 0;
+            camera.rotation.z = 0;
+            camera.rotation.order = 'YXZ';
+            scene.add( camera );
+        
+            if (deviceSettings.isMobile) {
+                isWebglAliasing = false;
+            }
+        
+            renderer = new THREE.WebGLRenderer({ alpha: false, antialias: isWebglAliasing });
+            var devicePixelRatio = window.devicePixelRatio = window.devicePixelRatio || window.screen.deviceXDPI / window.screen.logicalXDPI;
+            renderer.setPixelRatio(devicePixelRatio);
+            renderer.setSize(width, height);
+            renderer.setClearColor (0x000000, 1);
+            document.getElementById("interactive").appendChild( renderer.domElement );
+            renderer.compile(scene, camera);
+        
+            window.addEventListener( 'resize', onWindowResize, false );
+            onWindowResize();
+        
+            animate();
+        
+            initPreloader();
+        }
+        
+        var loadingManager = new THREE.LoadingManager(),
+            textureLoader = new THREE.TextureLoader(loadingManager),
+            texturesLoaded,
+            texturesTotal;
+        
+        function initPreloader() {
+            issTexture = textureLoader.load("{% static 'follow-dragon/img/icon_iss.png' %}");
+            dragonTexture = textureLoader.load("{% static 'follow-dragon/img/icon_dragon.png' %}");
+            dragonIssTexture = textureLoader.load("{% static 'follow-dragon/img/icon_dragon_iss.png' %}");
+            if (deviceSettings.isMobile) {
+                earthTexture = textureLoader.load("{% static 'follow-dragon/img/earth/8081_earthmap2k.jpg' %}");
+                earthGlowTexture = textureLoader.load("{% static 'follow-dragon/img/glow_mobile.jpg' %}");
+            } else {
+                earthTexture = textureLoader.load("{% static 'follow-dragon/img/earth/8081_earthmap2k.jpg' %}");
+                earthGlowTexture = textureLoader.load("{% static 'follow-dragon/img/glow.jpg' %}");
+            }
+        
+            loadingManager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+                renderer.compile(scene, camera);
+                texturesTotal = itemsTotal;
+                texturesLoaded = itemsLoaded;
+                var tempPercentage = Math.round( itemsLoaded / itemsTotal * 100 );
+                updatePreloader(tempPercentage);
+            };
+        
+            loadingManager.onLoad = function () {
+                initExperience();
+            };
+        
+            createScene();
+            createEarth();
+            createISS();
+            createDragon();
+            startPreloader();
+        }
+        
+        function startPreloader() {
+            gsap.set( "#preloader-circle .circle-color, #preloader-circle .circle-grey", { drawSVG: "0% 0%", autoAlpha: 0 });
+            gsap.set( "#preloader-circle", { rotation: -90 });
+            var preloaderAnimationIn =  new TimelineMax({ paused: true } );
+            preloaderAnimationIn.fromTo( "#preloader-circle .circle-grey", 3, { drawSVG: "0% 0%" }, { drawSVG: "0% 102%", ease: "expo.inOut" }, 0);
+            preloaderAnimationIn.to( "#preloader-circle .circle-color", 1, { autoAlpha: 1 }, 1);
+            preloaderAnimationIn.fromTo( "#preloader-inner, #preloader-circle .circle-grey", 1, { autoAlpha: 0 }, { autoAlpha: 1, ease: "none"}, 0 );
+            preloaderAnimationIn.play(0);
+        }
+        
+        function updatePreloader(percent) {
+            var preloaderPercent = percent;
+            gsap.to( "#preloader-circle .circle-color", 1, { drawSVG: "0% " + preloaderPercent + "%", immediateRender: false, ease: "expo.out" });
+            $('#preloader-percent').innerHTML = preloaderPercent;
+        }
+        
+        function hidePreloader() {
+            var preloaderAnimationOut =  new TimelineMax({ paused: true });
+            preloaderAnimationOut.to( "#preloader", 1, { autoAlpha: 0, ease: "none" }, 1);
+            preloaderAnimationOut.play(0);
+            isEventsEnabled = true;
+            //isRotated = true;
+        }
+        
+        // INIT EXPERIENCE
+        function initExperience() {
+            if (deviceSettings.isMobile) {
+                document.getElementById("interactive").addEventListener( 'touchstart', onDocumentTouchStart, false );
+                document.getElementById("interactive").addEventListener( 'touchmove', onDocumentTouchMove, false );
+                document.getElementById("interactive").addEventListener( 'touchend', onDocumentTouchEnd, false );
+            } else  {
+                document.getElementById("interactive").addEventListener( 'mousedown', onDocumentMouseDown, false );
+                document.getElementById("interactive").addEventListener( 'mousemove', onDocumentMouseMove, false );
+                document.getElementById("interactive").addEventListener( 'mouseup', onDocumentMouseUp, false );
+                //document.getElementById("interactive").addEventListener( 'mousewheel', onMouseWheel, false);
+                document.getElementById("interactive").addEventListener( 'mouseleave', onDocumentMouseLeave, false );
+            }
+            renderer.compile(scene, camera);
+            hidePreloader();
+        }
+        
+        // SCENE ////////////////////////////////////////
+        var rotationObject,
+            dragonObject;
+        
+        function createScene() {
+            rotationObject  = new THREE.Group();
+            scene.add(rotationObject);
+        
+            earthObject = new THREE.Group();
+            rotationObject.add(earthObject);
+        
+            issObject = new THREE.Group();
+            issObject.rotation.x = -90 * toRAD;
+            rotationObject.add(issObject);
+        
+            dragonObject = new THREE.Group();
+            dragonObject.rotation.x = -90 * toRAD;
+            rotationObject.add(dragonObject);
+        }
+        
+        // EARTH ////////////////////////////////////////
+        var earthObject,
+            earthRadius = 6378.14,
+            earthSafeZone = earthRadius + 500,
+            earthCenter = new THREE.Vector3(0,0,0),
+            earthBufferGeometry,
+            earthMaterial,
+            earthTexture,
+            earthMesh,
+            earthGlowBufferGeometry,
+            earthGlowMaterial,
+            earthGlowTexture,
+            earthGlowMesh,
+            earthGlowSize = 30000,
+            earthCreated = false;
+        
+        function createEarth() {
+            // EARTH GLOW
+            earthGlowBufferGeometry = new THREE.PlaneBufferGeometry(earthGlowSize, earthGlowSize, 1, 1);
+            earthGlowMaterial = new THREE.MeshBasicMaterial({
+                map: earthGlowTexture,
+                transparent: true,
+                opacity: 0.5,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            earthGlowMesh = new THREE.Mesh( earthGlowBufferGeometry, earthGlowMaterial );
+            earthGlowMesh.position.z = -5000;
+            scene.add(earthGlowMesh);
+        
+            // EARTH
+            earthBufferGeometry = new THREE.SphereBufferGeometry(earthRadius, 32, 32);
+            earthMaterial = new THREE.MeshBasicMaterial({
+                map: earthTexture
+            });
+            earthMesh = new THREE.Mesh(earthBufferGeometry, earthMaterial);
+            renderer.compile(scene, camera);
+            earthObject.add(earthMesh);
+            /*
+            // DIRECTION HELPER
+            const dir = new THREE.Vector3( 0, 0, 5 );
+            //normalize the direction vector (convert to vector of length 1)
+            dir.normalize();
+            const origin = new THREE.Vector3( 0, 0, 0 );
+            const length = 9000;
+            const hex = 0xffff00;
+            const arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+            dragonObject.add( arrowHelper );
+             */
+            earthCreated = true;
+        }
+        
+        // ISS ////////////////////////////////////////
+        var issMesh,
+            issMaterial,
+            issTexture,
+            issTargetPosition,
+            issX = 0,
+            issY = 0,
+            issZ = 0,
+            issCreated = false;
+        
+        function createISS() {
+            issTexture.anisotropy = 16;
+        
+            issGeometry = new THREE.PlaneGeometry( iconSize, iconSize, 32 );
+            issMaterial = new THREE.MeshBasicMaterial( {
+                map: issTexture,
+                transparent: true,
+                opacity: 1,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            issMaterial.needsUpdate = true;
+            issMesh = new THREE.Mesh( issGeometry, issMaterial );
+            issMesh.visible = false;
+        
+            var tempIconSize = iconSize;
+            if (deviceSettings.isMobile) {
+                tempIconSize = iconSize * 2 ;
+            }
+            issMesh.scale.set( tempIconSize, tempIconSize, tempIconSize );
+            issMesh.position.set( 0, 0, 0 );
+            issObject.add(issMesh);
+        
+            issCreated = true;
+        }
+        
+        function renderISS() {
+            if (issCreated) {
+                issMesh.lookAt( camera.position );
+            }
+        }
+        
+        // DRAGON ////////////////////////////////////////
+        var dragonMesh,
+            dragonMaterial,
+            dragonTexture,
+            dragonIssTexture,
+            dragonTargetPosition,
+            dragonX = 0,
+            dragonY = 0,
+            dragonZ = 0,
+            dragonCreated = false;
+        
+        function createDragon() {
+            dragonTexture.anisotropy = 16;
+        
+            dragonGeometry = new THREE.PlaneGeometry( iconSize, iconSize, 32 );
+            dragonMaterial = new THREE.MeshBasicMaterial( {
+                map: dragonTexture,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            dragonMaterial.needsUpdate = true;
+            dragonMesh = new THREE.Mesh( dragonGeometry, dragonMaterial );
+            dragonMesh.visible = false;
+        
+            var tempIconSize = iconSize;
+            if (deviceSettings.isMobile) {
+                tempIconSize = iconSize * 2 ;
+            }
+            dragonMesh.scale.set( tempIconSize, tempIconSize, tempIconSize );
+            dragonMesh.position.set( 0, 0, 0 );
+            dragonObject.add(dragonMesh);
+        
+            dragonCreated = true;
+        
+            // START THE TRACKER
+            objectTracker = setInterval(objectTrackerLoop, 5000);
+            objectTrackerLoop();
+        }
+        
+        function renderDragon() {
+            if (dragonCreated) {
+                dragonMesh.lookAt( camera.position );
+            }
+        }
+        
+        // DRAGON TRAJECTORY ////////////////////////////////////////
+        var dragonTrajectoryObject = new THREE.Group(),
+            dragonTrajectoryMaterial,
+            dragonTrajectoryVerticesArray = [],
+            dragonTrajectoryLineTotal,
+            dragonTrajectoryBufferGeometry,
+            dragonTrajectoryMesh,
+            dragonTrajectoryPositions,
+            dragonTrajectoryAlphas,
+            dragonTrajectoryColor = new THREE.Color("#FFFFFF"), //00D1FF
+            dragonTrajectoryCreated = false;
+        
+        function createDragonTrajectory() {
+            dragonTrajectoryBufferGeometry = new THREE.BufferGeometry();
+            dragonTrajectoryShaderUniforms = {
+                color:     { value: dragonTrajectoryColor },
+            };
+        
+            dragonTrajectoryShaderMaterial = new THREE.ShaderMaterial( {
+                uniforms:       dragonTrajectoryShaderUniforms,
+                vertexShader:   document.getElementById( 'line_vertexshader' ).textContent,
+                fragmentShader: document.getElementById( 'line_fragmentshader' ).textContent,
+                transparent:    true
+            });
+        
+            dragonTrajectoryLineTotal = dragonTrajectoryVerticesArray.length;
+            dragonTrajectoryPositions = new Float32Array(dragonTrajectoryLineTotal * 3);
+            dragonTrajectoryAlphas = new Float32Array( dragonTrajectoryLineTotal );
+        
+            var tempOpacity = 1;
+            var opacityFadeFactor = dragonTrajectoryLineTotal/2; // START FADING HALF WAY
+            var opacityFadePoint = dragonTrajectoryLineTotal - opacityFadeFactor;
+            for (var i = 0; i < dragonTrajectoryLineTotal; i++) {
+                dragonTrajectoryPositions[i * 3] = dragonTrajectoryVerticesArray[i].x;
+                dragonTrajectoryPositions[i * 3 + 1] = dragonTrajectoryVerticesArray[i].y;
+                dragonTrajectoryPositions[i * 3 + 2] = dragonTrajectoryVerticesArray[i].z;
+                if ( i > opacityFadePoint ) {
+                    tempOpacity = 1 - (i - opacityFadePoint) / opacityFadeFactor; // FADE DOWN
+                }
+                dragonTrajectoryAlphas[ i ] = tempOpacity;
+            }
+        
+            dragonTrajectoryBufferGeometry.setAttribute( 'position', new THREE.BufferAttribute( dragonTrajectoryPositions, 3 ) );
+            dragonTrajectoryBufferGeometry.setAttribute( 'alpha', new THREE.BufferAttribute( dragonTrajectoryAlphas, 1 ) );
+        
+            dragonTrajectoryMesh = new THREE.Line( dragonTrajectoryBufferGeometry, dragonTrajectoryShaderMaterial );
+            dragonTrajectoryMesh.needsUpdate = true;
+        
+            dragonTrajectoryObject.add( dragonTrajectoryMesh );
+            dragonObject.add(dragonTrajectoryMesh);
+        
+            dragonTrajectoryCreated = true;
+        }
+        
+        function renderDragonTrajectory() {
+            if (dragonTrajectoryCreated) {
+                for (var i = 0; i < dragonTrajectoryLineTotal; i++) {
+                    dragonTrajectoryPositions[i * 3] = dragonTrajectoryVerticesArray[i].x;
+                    dragonTrajectoryPositions[i * 3 + 1] = dragonTrajectoryVerticesArray[i].y;
+                    dragonTrajectoryPositions[i * 3 + 2] = dragonTrajectoryVerticesArray[i].z;
+                }
+                dragonTrajectoryBufferGeometry.setAttribute( 'position', new THREE.BufferAttribute( dragonTrajectoryPositions, 3 ) );
+            }
+        }
+        
+        // OBJECT TRACKER ////////////////////////////////////////
+        var objectTracker;
+        
+        function objectTrackerLoop() {
+            var request = new XMLHttpRequest();
+            request.open('GET', assetsBaseUrl + '/dragon_public.json?' + new Date().getTime(), true);
+            //request.open('GET', 'dragon_public_sample.json?'+ new Date().getTime(), true);
+            request.onload = function() {
+                if (this.status >= 200 && this.status < 400) {
+                    var data = JSON.parse(this.response);
+        
+                    // ISS POSITION
+                    if (data["glass.predict_iss_r_ecef_v3"]) {
+                        issX = data["glass.predict_iss_r_ecef_v3"][0] / distanceToMeters;
+                        issY = data["glass.predict_iss_r_ecef_v3"][1] / distanceToMeters;
+                        issZ = data["glass.predict_iss_r_ecef_v3"][2] / distanceToMeters;
+                        var issVertex = new THREE.Vector3(issX, issY, issZ);
+                        var distance = checkDistance(issVertex, earthCenter);
+        
+                        if (distance < earthSafeZone) {
+                            var newPosition = updateDistance(issVertex, distance);
+                            issX = newPosition.x;
+                            issY = newPosition.y;
+                            issZ = newPosition.z;
+                        }
+                        issMesh.position.set( issX, issY, issZ );
+        
+                        if (issCreated && issMesh.visible === false) {
+                            issMesh.visible = true;
+                            gsap.fromTo( issMaterial, 1, { opacity: 0 }, { opacity: 1 });
+                        }
+                    } else {
+                        hideISS();
+                    }
+        
+                    // DRAGON POSITION
+                    if (data["glass.predict_dgn_r_ecef_v3"]) {
+                        dragonX = data["glass.predict_dgn_r_ecef_v3"][0] / distanceToMeters;
+                        dragonY = data["glass.predict_dgn_r_ecef_v3"][1] / distanceToMeters;
+                        dragonZ = data["glass.predict_dgn_r_ecef_v3"][2] / distanceToMeters;
+                        var dragonVertex = new THREE.Vector3(dragonX, dragonY, dragonZ);
+                        var distance = checkDistance(dragonVertex, earthCenter);
+        
+                        if (distance < earthSafeZone) {
+                            var newPosition = updateDistance(dragonVertex, distance);
+                            dragonX = newPosition.x;
+                            dragonY = newPosition.y;
+                            dragonZ = newPosition.z;
+                        }
+                        dragonMesh.position.set( dragonX, dragonY, dragonZ );
+        
+                        if (dragonCreated && dragonMesh.visible === false) {
+                            dragonMesh.visible = true;
+                            gsap.fromTo( dragonMaterial, 1, { opacity: 0 }, { opacity: 1 });
+                        }
+                        if (dragonCreated && dragonMesh.visible) {
+                            rotateToLocation(dragonX, dragonY, dragonZ);
+                        }
+                    } else {
+                        hideDragon();
+                    }
+        
+                    // CHECK DISTANCE BETWEEN DRAGON & ISS
+                    // HIDE IF TOO CLOSE!
+                    var proximity = checkDistance(dragonMesh.position, issMesh.position);
+                    if (proximity <= 400 && issCreated && issMesh.visible) {
+                        hideISS();
+                        dragonMaterial.map = dragonIssTexture;
+                    } else if (proximity > 400 && issCreated)  {
+                        issMesh.visible = true;
+                        dragonMaterial.map = dragonTexture;
+                    }
+        
+                    // DRAGON TRAJECTORY
+                    if (data["glass.prop_dgn_r_ecef_v3"]) {
+                        var jsonArray =  [];
+                        jsonArray = data["glass.prop_dgn_r_ecef_v3"];
+                        dragonTrajectoryVerticesArray = [];
+                        for ( i = 0; i < jsonArray.length; i ++ ) {
+                           var vertex = new THREE.Vector3();
+                           vertex.x = jsonArray[i][0] / distanceToMeters;
+                           vertex.y = jsonArray[i][1] / distanceToMeters;
+                           vertex.z = jsonArray[i][2] / distanceToMeters;
+        
+                            distance = checkDistance(vertex, earthCenter);
+                            if (distance < earthSafeZone) {
+                                var newPosition = updateDistance(vertex, distance);
+                                vertex.x = newPosition.x;
+                                vertex.y = newPosition.y;
+                                vertex.z = newPosition.z;
+                            }
+                           dragonTrajectoryVerticesArray.push(vertex);
+                        }
+                        if (!dragonTrajectoryCreated) {
+                            createDragonTrajectory();
+                        }
+                    } else {
+                        hideDragonTrajectory();
+                    }
+                } else {
+                    hideISS();
+                    hideDragon();
+                    hideDragonTrajectory();
+                }
+            };
+            request.send();
+        }
+        
+        function hideISS() {
+            if (issCreated) issMesh.visible = false;
+        }
+        
+        function hideDragon() {
+            if (dragonCreated) dragonMesh.visible = false;
+        }
+        
+        function hideDragonTrajectory() {
+            if (dragonTrajectoryCreated) dragonTrajectoryMesh.visible = false;
+        }
+        
+        function checkDistance(object, center) {
+            return object.distanceTo(center);
+        }
+        
+        function updateDistance(objectVertex, distance) {
+            var direction = objectVertex.clone().normalize();
+            var safeDistance = objectVertex.clone().addScaledVector(direction, (earthSafeZone - distance));
+            return new THREE.Vector3(safeDistance.x, safeDistance.y, safeDistance.z);
+        }
+        
+        function rotateToLocation(x, y, z) {
+            if (!isRotated) {
+                var dragonWorldPosition = new THREE.Vector3();
+                var dragonWorldPositionCurrent = new THREE.Vector3();
+                var dragonWorldDirection = new THREE.Vector3();
+        
+                dragonMesh.getWorldPosition( dragonWorldPositionCurrent );
+                dragonObject.rotation.x = 90 * toRAD;
+                dragonMesh.getWorldPosition( dragonWorldPosition );
+                dragonObject.rotation.x= -90 * toRAD;
+                dragonMesh.getWorldDirection( dragonWorldDirection );
+        
+                if( Math.abs(dragonWorldDirection.z) < 1.0) return;
+                var newRotation = -Math.atan2(dragonWorldPosition.x, dragonWorldPosition.z);
+                targetRotationY = newRotation;
+            }
+        }
+        
+        // ANIMATIONS & RENDERING
+        function animate() {
+            requestAnimationFrame( animate );
+            render();
+        }
+        
+        function render() {
+            renderer.render( scene, camera );
+        
+            renderISS();
+            renderDragon();
+            renderDragonTrajectory();
+        
+            if (isEventsEnabled) {
+                if (targetRotationX > 75 * toRAD) targetRotationX = 75 * toRAD;
+                if (targetRotationX < -75 * toRAD) targetRotationX = -75 * toRAD;
+                rotationObject.rotation.x = rotationObject.rotation.x += ( targetRotationX - rotationObject.rotation.x ) * dragSpeed;
+                rotationObject.rotation.y = rotationObject.rotation.y += ( targetRotationY - rotationObject.rotation.y ) * dragSpeed;
+            }
+        }
+        
+        
+        // RESIZE
+        function onWindowResize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+        
+            // RESPONSIVE CANVAS HEIGHT
+            if (width < 1000) {
+                height = height / 2;
+            }
+        
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize( width, height );
+        }
+        
+        // MOUSE AND MOUSE WHEEL
+        function onMouseWheel( event ) {
+            event.preventDefault();
+            targetCameraZ -= event.wheelDeltaY * 0.01;
+        }
+        
+        function onDocumentMouseDown( event ) {
+            if ( isEventsEnabled === false ) return;
+            event.preventDefault();
+            isMouseDown = true;
+        
+            mouseXOnMouseDown = event.clientX - windowHalfX;
+            mouseYOnMouseDown = event.clientY - windowHalfY;
+        
+            targetRotationXOnMouseDown = targetRotationX;
+            targetRotationYOnMouseDown = targetRotationY;
+        
+            initMouseX = event.clientX;
+        }
+        
+        function onDocumentMouseMove( event ) {
+            if ( isEventsEnabled === false ) return;
+            isMouseMoved = true;
+            clientMouseX = event.clientX;
+            clientMouseY = event.clientY;
+        
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+            mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        
+            if (isMouseDown) {
+                isRotated = true;
+                mouseX = event.clientX - windowHalfX;
+                mouseY = event.clientY - windowHalfY;
+                targetRotationX = targetRotationXOnMouseDown + ( mouseY - mouseYOnMouseDown ) * 0.0025;
+                targetRotationY = targetRotationYOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.0025;
+            }
+        }
+        
+        function onDocumentMouseUp( event ) {
+            if ( isEventsEnabled === false ) return;
+            event.preventDefault();
+            isMouseDown = false;
+        }
+        
+        function onDocumentMouseLeave( event ) {
+            if ( isEventsEnabled === false ) return;
+            event.preventDefault();
+            if (isMouseDown) {
+                isMouseDown = false;
+            }
+        }
+        
+        // TOUCH
+        var _touchZoomDistanceStart,
+            _touchZoomDistanceEnd;
+        function onDocumentTouchStart( event ) {
+            if ( isEventsEnabled === false ) return;
+            if ( event.touches.length == 1 ) {
+                event.preventDefault();
+                isMouseDown = true;
+        
+                mouseXOnMouseDown = event.touches[ 0 ].pageX - windowHalfX;
+                mouseYOnMouseDown = event.touches[ 0 ].pageY - windowHalfY;
+        
+                targetRotationXOnMouseDown = targetRotationX;
+                targetRotationYOnMouseDown = targetRotationY;
+        
+                mouse.x = (event.changedTouches[0].clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.changedTouches[0].clientY / window.innerHeight) * 2 + 1;
+            }
+        
+            if ( event.touches.length > 1 ) {
+                var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+                var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
+                _touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt( dx * dx + dy * dy );
+            }
+        }
+        
+        function onDocumentTouchMove( event ) {
+            if ( isEventsEnabled === false ) return;
+            if ( event.touches.length == 1 ) {
+                event.preventDefault();
+                if (isMouseDown) {
+                    isRotated = true;
+                    mouseX = mouseX = event.touches[ 0 ].pageX - windowHalfX;
+                    mouseY = mouseY = event.touches[ 0 ].pageY - windowHalfY;
+                    // TURNING OFF UP/DOWN FOR NOW
+                    //targetRotationX = targetRotationXOnMouseDown + ( mouseY - mouseYOnMouseDown ) * 0.005;
+                    targetRotationY = targetRotationYOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.005;
+                }
+            }
+        }
+        
+        function onDocumentTouchEnd( event ) {
+            _touchZoomDistanceStart = _touchZoomDistanceEnd = 0;
+            onDocumentMouseUp(event);
+        }
+        
+        if ( WEBGL.isWebGLAvailable() ) {
+            deviceSettings.isWebGL = true;
+            initWebgl();
+        } else {
+            var warning = WEBGL.getWebGLErrorMessage();
+            document.getElementById( 'interactive').appendChild( warning );
+        }
+        
+    </script>
+{% endblock %}
