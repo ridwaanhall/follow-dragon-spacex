@@ -1,0 +1,35 @@
+<!-- main.html -->
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>{% block title %}SPACEX{% endblock %}</title>
+
+        <link rel="stylesheet" type="text/css" href="{% static 'follow-dragon/css/normalize.min.css' %}" media="screen" />
+        <link rel="stylesheet" type="text/css" href="{% static 'follow-dragon/css/layout.css' %}" media="screen" />
+        <link rel="stylesheet" type="text/css" href="{% static 'style.min.css' %}" media="screen" />
+        <link rel="stylesheet" type="text/css" href="{% static 'follow-dragon/css/ab.css' %}" media="screen" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+        <!-- Additional Scripts or Meta tags for individual pages -->
+        {% block head_scripts %}
+        {% endblock %}
+    </head>
+    <body>
+        <!-- Content to be overridden by child templates -->
+        {% block content %}
+        {% endblock %}
+
+        <!-- Common Scripts -->
+        <script type="text/javascript" src="{% static 'follow-dragon/js/three/three.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'follow-dragon/js/three/WebGL.js' %}"></script>
+        <script type="text/javascript" src="{% static 'follow-dragon/js/gsap/gsap.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'follow-dragon/js/gsap/DrawSVGPlugin.min.js' %}"></script>
+
+        <!-- Additional Scripts for individual pages -->
+        {% block body_scripts %}
+        {% endblock %}
+    </body>
+</html>
