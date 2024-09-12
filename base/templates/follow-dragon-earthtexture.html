@@ -4,7 +4,7 @@
 {% load static %}
 
 {% block title %}
-    SPACEX - Where is Dragon?
+    Earth Texture
 {% endblock %}
 
 {% block head_scripts %}
@@ -44,17 +44,17 @@
 {% endblock %}
 
 {% block content %}
-    <div class="box content-top-left dragon-tracker-key">
+    <!-- <div class="box content-top-left dragon-tracker-key">
         <h2 class="dragontracker-header" style="font-size: 35px;">FOLLOW DRAGON</h2>
         <div class="key-entry">
             <div class="key-image">
                 <img src="{% static 'images/inspiration4/Dragon.svg' %}" width="40" height="40" />
             </div>
             <div class="key-values">
-                <span>DRAGON</span>
+                <span><a href="{% url 'follow_dragon_earthmap' %}">Earth Map</a></span>
             </div>
         </div>
-    </div>
+    </div> -->
     <div id="interactive" class="noselect"></div>
     <div id="preloader" class="noselect">
         <div id="preloader-inner">
