@@ -7,6 +7,12 @@
 
 This project show case the SpaceX Dragon spacecraft in real-time and track orbital data.
 
+## Features
+
+- Track the Dragon spacecraft in real-time
+- View the orbital path of the spacecraft
+- View the spacecraft's position on a 3D globe
+
 ## How to use
 
 1. Clone the repository
@@ -34,3 +40,29 @@ This project show case the SpaceX Dragon spacecraft in real-time and track orbit
     ```
 
 5. Open your browser and navigate to <http://127.0.0.1:8000/>
+
+    ```bash
+    http://127.0.0.1:8000/
+    ```
+
+## Documentation
+
+This project has two urls:
+
+1. <http://127.0.0.1:8000/> it will redirect to <http://127.0.0.1:8000/earthtexture>
+
+2. <http://127.0.0.1:8000/earthmap>
+
+## License
+
+-
+
+## Author
+
+- [ridwaanhall](https://github.com/ridwaanhall)
+
+## Contributors
+
+- [ridwaanhall](https://github.com/ridwaanhall)
+
+## Contributing
