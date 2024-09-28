@@ -8,7 +8,7 @@ class DragonViewsTestCase(TestCase):
     def setUp(self):
         self.client = Client()
         self.dragon_public_url = reverse('dragon_public')
-        self.redirect_to_texture_url = reverse('redirect_to_texture')
+        self.redirect_to_map_url = reverse('redirect_to_map')
         self.follow_dragon_earthtexture_url = reverse('follow_dragon_earthtexture')
         self.follow_dragon_earthmap_url = reverse('follow_dragon_earthmap')
 
@@ -35,10 +35,10 @@ class DragonViewsTestCase(TestCase):
         self.assertIn(b"Error fetching data", response.content)
         mock_get.assert_called_once()
 
-    def test_redirect_to_texture(self):
-        response = self.client.get(self.redirect_to_texture_url)
+    def test_redirect_to_map(self):
+        response = self.client.get(self.redirect_to_map_url)
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.follow_dragon_earthtexture_url)
+        self.assertRedirects(response, self.follow_dragon_earthmap_url)
 
     def test_follow_dragon_earthtexture_view(self):
         response = self.client.get(self.follow_dragon_earthtexture_url)
