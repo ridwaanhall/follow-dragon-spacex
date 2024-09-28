@@ -76,7 +76,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'dragon.wsgi.application'
+WSGI_APPLICATION = 'dragon.wsgi.app'
 
 
 # Database
