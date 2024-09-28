@@ -25,7 +25,7 @@ DRAGON_PUBLIC_URL = config('DRAGON_PUBLIC_URL')
 SECRET_KEY = 'django-insecure-*u=qefla6y^+7)2gmdsmc2i2xw)grjz*=wa34da0@xfc3iitzt'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '.vercel.app',

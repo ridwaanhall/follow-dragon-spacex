@@ -46,6 +46,9 @@ def dragon_public(request):
 def redirect_to_texture(request):
     return redirect('follow_dragon_earthtexture')
 
+def redirect_to_map(request):
+    return redirect('follow_dragon_earthmap')
+
 def follow_dragon_earthtexture_view(request):
     return render(request, 'follow-dragon-earthtexture.html')
 
