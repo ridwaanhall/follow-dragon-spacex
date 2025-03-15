@@ -73,8 +73,8 @@
 
 {% block body_scripts %}
     <script type="text/javascript">
-        const contentBaseUrl = "https://follow-dragon.ridwaanhall.me";
-        const assetsBaseUrl = "https://follow-dragon.ridwaanhall.me";
+        const contentBaseUrl = "{{ request.scheme }}://{{ request.get_host }}";
+        const assetsBaseUrl = "{{ request.scheme }}://{{ request.get_host }}";
     </script>
 
     <script type="text/javascript">
