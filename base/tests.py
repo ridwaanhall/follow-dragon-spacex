@@ -48,4 +48,4 @@ class DragonViewsTestCase(TestCase):
     def test_follow_dragon_earthmap_view(self):
         response = self.client.get(self.follow_dragon_earthmap_url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'follow-dragon-earthmap.html')
+        self.assertTemplateUsed(response, 'earthmap.html')
