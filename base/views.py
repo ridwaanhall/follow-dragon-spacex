@@ -3,6 +3,9 @@ from django.shortcuts import redirect, render
 import requests
 import datetime
 from django.http import JsonResponse, HttpResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 def dragon_public(request):
     url = settings.DRAGON_PUBLIC_URL
@@ -41,7 +44,8 @@ def dragon_public(request):
 
     except requests.exceptions.RequestException as e:
         # Handle any request errors
-        return HttpResponse(f"Error fetching data: {e}", status=500)
+        logger.error(f"Error fetching data from {url}: {e}")
+        return HttpResponse("An internal error has occurred. Please try again later.", status=500)
     
 def redirect_to_texture(request):
     return redirect('follow_dragon_earthtexture')
