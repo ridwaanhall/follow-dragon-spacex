@@ -4,6 +4,9 @@ from django.views import View
 from django.http import JsonResponse, HttpResponse
 import requests
 import datetime
+import logging
+
+logging.basicConfig(level=logging.ERROR)
 
 class DragonPublicView(View):
     def get(self, request):
@@ -35,7 +38,8 @@ class DragonPublicView(View):
             json_data = response.json()
             return JsonResponse(json_data, safe=False)
         except requests.exceptions.RequestException as e:
-            return HttpResponse(f"Error fetching data: {e}", status=500)
+            logging.error(f"Error fetching data: {e}")
+            return HttpResponse("An internal error has occurred.", status=500)
 
 class EarthTextureView(View):
     def get(self, request):
