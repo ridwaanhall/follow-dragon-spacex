@@ -30,8 +30,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 if not DEBUG:
     ALLOWED_HOSTS = [
         '.vercel.app',
-        '.ridwaanhall.me',
-        '.ridwaanhall.com'
+        '.rone.dev',
     ]
 else:
     ALLOWED_HOSTS = []
