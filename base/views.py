@@ -10,8 +10,13 @@ logging.basicConfig(level=logging.ERROR)
 
 class DragonPublicView(View):
     def get(self, request):
+        if not getattr(settings, 'IS_AVAILABLE', True):
+            return JsonResponse({
+                "status": "unavailable",
+                "message": "The service is temporarily unavailable due to high traffic or maintenance. Please try again later.",
+                "code": 503
+            }, status=503)
         url = settings.DRAGON_PUBLIC_URL
-        
         headers = {
             'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'accept-encoding': 'gzip, deflate, br, zstd',
@@ -31,7 +36,6 @@ class DragonPublicView(View):
             'upgrade-insecure-requests': '1',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
         }
-
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
@@ -47,4 +51,10 @@ class EarthTextureView(View):
 
 class EarthMapView(View):
     def get(self, request):
+        if not getattr(settings, 'IS_AVAILABLE', True):
+            return JsonResponse({
+                "status": "unavailable",
+                "message": "The service is temporarily unavailable due to high traffic or maintenance. Please try again later.",
+                "code": 503
+            }, status=503)
         return render(request, 'base/map.html')

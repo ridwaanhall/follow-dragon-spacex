@@ -14,8 +14,23 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path, include
 
-urlpatterns = [
-    path('', include('base.urls')),
-]
+from django.urls import path, include
+from django.conf import settings
+from django.http import JsonResponse
+
+def unavailable_view(request):
+    return JsonResponse({
+        "status": "unavailable",
+        "message": "The service is temporarily unavailable due to high traffic or maintenance. Please try again later.",
+        "code": 503
+    }, status=503)
+
+if settings.IS_AVAILABLE:
+    urlpatterns = [
+        path('', include('base.urls')),
+    ]
+else:
+    urlpatterns = [
+        path('', unavailable_view),
+    ]

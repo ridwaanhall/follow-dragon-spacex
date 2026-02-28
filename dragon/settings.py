@@ -37,6 +37,7 @@ else:
 
 
 # Application definition
+IS_AVAILABLE = False  # Set to False to make the project unavailable]
 
 INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
