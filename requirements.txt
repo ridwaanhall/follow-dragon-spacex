@@ -7,5 +7,5 @@ python-decouple==3.8
 requests==2.33.0
 sqlparse==0.5.4
 tzdata==2024.1
-urllib3==2.6.3
+urllib3==2.7.0
 whitenoise==6.7.0
