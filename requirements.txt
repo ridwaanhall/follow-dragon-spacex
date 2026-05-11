@@ -1,11 +1,4 @@
-asgiref==3.8.1
-certifi==2024.8.30
-charset-normalizer==3.3.2
 Django==6.0.5
-idna==3.8
 python-decouple==3.8
 requests==2.33.0
-sqlparse==0.5.4
-tzdata==2024.1
-urllib3==2.7.0
 whitenoise==6.7.0
